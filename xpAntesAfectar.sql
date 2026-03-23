@@ -104,7 +104,8 @@ AS BEGIN
  -- JARC ValidarPorcentajeCompraAnticiposCXP
  --Obtener el importe de la orden compra y VALIDAR estatus pendiente
  ---------------------------------------------------------
-	SELECT @Proveedor			= c.Proveedor
+	SELECT	@Mov				= c.Mov
+			,@Proveedor			= c.Proveedor
 			,@Autorizacion		= COALESCE(c.Autorizacion,'')
 			,@OrdenCompra		= c.Referencia 
 			,@Clave				= mt.Clave 
@@ -122,11 +123,11 @@ AS BEGIN
      AND co.Estatus = 'PENDIENTE'
 
 
-		IF COALESCE(@SaldoCompra,0) > 0.00  
+		IF COALESCE(@SaldoCompra,0) > 0.00  AND @Mov = 'Anticipo Importacion'
 		BEGIN
 
 		---------------------------------------------------------
-		--Si el saldo de la compra es mayor a cero 
+		--Si el saldo de la compra es mayor a cero y aplica para movimientos Anticipo Importacion
 		--se calcula el saldo del proveedor y el porcentaje
 		---------------------------------------------------------
 
@@ -157,10 +158,10 @@ AS BEGIN
 					SELECT @SaldoCompra = (@SaldoCompra / @TCCompra)--CASE WHEN @MonedaCo ='Pesos' THEN (@SaldoCompra) ELSE (@SaldoCompra / @TCCompra) END
 							,@SaldoProv = (@SaldoProv / @TCCxp) --CASE WHEN @MonedaCo ='Pesos' THEN (@SaldoProv) ELSE (@SaldoProv / @TCCxp) END
 
-					SELECT @Ok = 10065, @OkRef = 'El importe total de los anticipos'+SPACE(1)+'$'+TRIM(CONVERT(varchar(20),ROUND(@SaldoProv,4)))
-												+'<BR>supera el Importe de la orden de compra'+SPACE(1)+'$'+TRIM(CONVERT(varchar(20), ROUND(@SaldoCompra,4)))+SPACE(1)+@MonedaCo
+					SELECT @Ok = 10065, @OkRef = 'El importe total de los anticipos '+'$ '+TRIM(CONVERT(varchar(20),ROUND(@SaldoProv,4)))
+												+'<BR>supera el Importe de la orden de compra '+'$ '+TRIM(CONVERT(varchar(20), ROUND(@SaldoCompra,4)))+' '+@MonedaCo
 												+'<BR>Es necesario autorizar el movimiento'
-												+'<BR>'+TRIM(CONVERT(varchar(20), @Porcentaje))+SPACE(1)+'%'
+												+'<BR>'+TRIM(CONVERT(varchar(20), @Porcentaje))+' %'
 
 		---------------------------------------------------------
 		--actualiza el movimiento para permitir autorizar
@@ -168,14 +169,16 @@ AS BEGIN
 
 					UPDATE  Cxp SET Mensaje = @Ok WHERE ID = @ID
 				END
-				ELSE
-					SELECT @SaldoCompra = (@SaldoCompra / @TCCompra)
-							,@SaldoProv = (@SaldoProv / @TCCxp)
+				--ELSE
+				--	SELECT @SaldoCompra = (@SaldoCompra / @TCCompra)
+				--			,@SaldoProv = (@SaldoProv / @TCCxp)
 
-				SELECT @Ok = 10065, @OkRef = 'El anticipo no puede superar el 10% del valor de la'+SPACE(1)+@OrdenCompra+SPACE(1)+'$'+TRIM(CONVERT(varchar(20), ROUND(@SaldoCompra,4)))+SPACE(1)+@MonedaCo
-											+'<BR>'+TRIM(CONVERT(varchar(20), @Porcentaje))+SPACE(1)+'%'
+				--SELECT @Ok = 10065, @OkRef = 'El anticipo no puede superar el 10% del valor de la'+SPACE(1)+@OrdenCompra+SPACE(1)+'$'+TRIM(CONVERT(varchar(20), ROUND(@SaldoCompra,4)))+SPACE(1)+@MonedaCo
+				--							+'<BR>'+TRIM(CONVERT(varchar(20), @Porcentaje))+SPACE(1)+'%'
 		END
-END
+
+
+END  --Fin Modulo CXP
 
         
              
